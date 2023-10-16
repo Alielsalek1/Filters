@@ -8,6 +8,11 @@ char imageFileName[100];
 int dx[] = {0, 0, 1, -1, 1, 1, -1, -1};
 int dy[] = {1, -1, 0, 0, 1, -1, 1, -1};
 
+enum Color {
+    BLACK = 0,
+    WHITE = 255
+};
+
 void loadImage();
 
 void saveImage();
@@ -77,8 +82,8 @@ void blackWhite() {
     // loop on all the pixels and for every pixel's Grayscale larger than 115 make it black else it is white
     for (int i = 0; i < SIZE; ++i) {
         for (int j = 0; j < SIZE; ++j) {
-            if (image[i][j] > 115) image[i][j] = 255;
-            else image[i][j] = 0;
+            if (image[i][j] > 115) image[i][j] = WHITE;
+            else image[i][j] = BLACK;
         }
     }
 }
@@ -86,7 +91,7 @@ void blackWhite() {
 void invert() {
     for (auto &i: image)
         for (auto &j: i)
-            j = 255 - j;
+            j = WHITE - j;
 }
 
 void flipImage() {
@@ -130,13 +135,13 @@ void detectEdges() {
     then mark it as an edge*/
     for (int i = 0; i < SIZE; ++i) {
         for (int j = 0; j < SIZE; ++j) {
-            temp[i][j] = 255;
+            temp[i][j] = WHITE;
             // looping on 4 directions using direction array
             for (int k = 0; k < 4; ++k) {
                 int nx = i + dx[k], ny = j + dy[k];
                 // check that the new index is in range
                 if (nx >= 0 && nx < SIZE && ny >= 0 && ny < SIZE && abs(image[i][j] - image[nx][ny]) >= 47)
-                    temp[i][j] = 0;
+                    temp[i][j] = BLACK;
             }
         }
     }
@@ -174,7 +179,7 @@ void cropImage() {
         for (int j = 0; j < SIZE; ++j) {
             // if you are in range leave the image else just
             if (i >= x && i <= x + w && j >= y && j <= y + w) continue;
-            image[i][j] = 255;
+            image[i][j] = WHITE;
         }
     }
 }
@@ -222,27 +227,37 @@ void shuffle() {
     for (auto &i: order)cin >> i;
 
     // this is the image vector and the position vectors so we can reorder the image.
-    vector<vector<vector<unsigned char>>> img(4,vector<vector<unsigned char>>(SIZE / 2, vector<unsigned char>(SIZE / 2)));
-    vector<int> x1{0, 0, SIZE / 2, SIZE / 2}, x2{SIZE / 2, SIZE / 2, SIZE, SIZE}, y1{0, SIZE / 2, 0, SIZE / 2}, y2{SIZE / 2, SIZE, SIZE / 2, SIZE};
+    const int half = SIZE / 2;
+    vector<vector<unsigned char>> img1(half, vector<unsigned char>(half));
+    vector<vector<unsigned char>> img2(half, vector<unsigned char>(half));
+    vector<vector<unsigned char>> img3(half, vector<unsigned char>(half));
+    vector<vector<unsigned char>> img4(half, vector<unsigned char>(half));
+    vector<int>
+            x1{0, 0, half, half}
+    , x2{half, half, SIZE, SIZE}
+    , y1{0, half, 0, half}
+    , y2{half, SIZE, half, SIZE};
+
+
     for (int k = 0; k < 4; k++) {
         int h1, h2, v1, v2;
         switch (order[k]) {
             case 1:
-                h1 = 0, h2 = SIZE / 2, v1 = 0, v2 = SIZE / 2;
+                h1 = 0, h2 = half, v1 = 0, v2 = half;
                 break;
             case 2:
-                h1 = 0, h2 = SIZE / 2, v1 = SIZE / 2, v2 = SIZE;
+                h1 = 0, h2 = half, v1 = half, v2 = SIZE;
                 break;
             case 3:
-                h1 = SIZE / 2, h2 = SIZE, v1 = 0, v2 = SIZE / 2;
+                h1 = half, h2 = SIZE, v1 = 0, v2 = half;
                 break;
             case 4:
-                h1 = SIZE / 2, h2 = SIZE, v1 = SIZE / 2, v2 = SIZE;
+                h1 = half, h2 = SIZE, v1 = half, v2 = SIZE;
                 break;
         }
 
         // this part is where each quadrant is stored in the image vector.
-        vector<vector<unsigned char>> quadrant(SIZE / 2, vector<unsigned char>(SIZE / 2));
+        vector<vector<unsigned char>> quadrant(half, vector<unsigned char>(SIZE / 2));
         int x = 0, y = 0;
         for (int i = h1; i < h2; ++i, ++x) {
             y = 0;
@@ -250,17 +265,47 @@ void shuffle() {
                 quadrant[x][y] = image[i][j];
             }
         }
-        img[k] = quadrant;
+        switch (k) {
+            case 0:
+                img1 = quadrant;
+                break;
+            case 1:
+                img2 = quadrant;
+                break;
+            case 2:
+                img3 = quadrant;
+                break;
+            case 3:
+                img4 = quadrant;
+                break;
+        }
     }
 
     // here we overwrite the image with the quadrants we saved.
     for (int i = 0; i < 4; i++) {
         int x = 0, y = 0;
+        vector<vector<unsigned char>> curr;
+        switch (i) {
+            case 0:
+                curr = img1;
+                break;
+            case 1:
+                curr = img2;
+                break;
+            case 2:
+                curr = img3;
+                break;
+            case 3:
+                curr = img4;
+                break;
+        }
         for (int j = x1[i]; j < x2[i]; ++j, ++x) {
             y = 0;
             for (int k = y1[i]; k < y2[i]; ++k, ++y) {
-                if (x < img[i].size() && y < img[i].size())
-                    image[j][k] = img[i][x][y];
+                if (x < curr.size() && y < curr.size()) {
+
+                    image[j][k] = curr[x][y];
+                }
             }
         }
     }
@@ -318,7 +363,7 @@ void shrink() {
     // Update the original image with the resized image, filling the remaining area with white
     for (int i = 0; i < SIZE; ++i)
         for (int j = 0; j < SIZE; ++j)
-            image[i][j] = i >= newImageSize or j >= newImageSize ? 255 : newImage[i][j];
+            image[i][j] = i >= newImageSize or j >= newImageSize ? WHITE : newImage[i][j];
 
 }
 
@@ -368,7 +413,7 @@ void skewHorizontally() {
         // If the degree is 45, fill the entire image with white pixels
         for (int i = 0; i < SIZE; ++i) {
             for (int j = 0; j < SIZE; ++j) {
-                image[i][j] = 255;
+                image[i][j] = (i + j == 255 ? image[i][j] : WHITE);
             }
         }
         return;
@@ -380,9 +425,10 @@ void skewHorizontally() {
     double ratio = double(SIZE) / double(newImageSize);
 
     // Copy pixels from the original image to the skewed image using the calculated ratio
-    for (int i = 0; i < SIZE; ++i) {
-        for (double j = 0; j < SIZE; j += ratio) {
-            newImage[i][int(j / ratio)] = image[i][int(j)];
+    int cnt = 0;
+    for (double j = 0; j < SIZE; j += ratio, cnt++) {
+        for (int i = 0; i < SIZE and cnt < newImageSize; ++i) {
+            newImage[i][cnt] = image[i][int(j)];
         }
     }
 
@@ -392,11 +438,11 @@ void skewHorizontally() {
         int count = 0;
         for (int j = 0; j < SIZE; j++) {
             if (j < empty)
-                image[i][j] = 255;
+                image[i][j] = WHITE;
             else if (count < newImageSize)
                 image[i][j] = newImage[i][count++];
             else
-                image[i][j] = 255;
+                image[i][j] = WHITE;
         }
     }
 }
@@ -405,42 +451,58 @@ void skewVertically() {
     cout << "Please enter the degree to skew up: ";
     long double degree;
     cin >> degree;
-    long double pi = 3.1415926535897932384626433832795;
-    long double rad = degree * pi / 180;
 
+    long double pi = 3.1415926535897932384626433832795;
+
+    // Convert user-input degree to radians (rad), ensuring it's within 45 degrees.
+    long double rad = (degree > 45 ? int(degree) % 45 : degree) * pi / 180;
+
+    // Calculate the amount of whitespace added due to skew
     int whiteSpace = SIZE * tan(rad);
     int newImageSize = SIZE - whiteSpace;
 
+    if (degree == 45) {
+        // If the degree is 45, fill the diagonal with the centered pixel
+        for (int i = 0; i < SIZE; ++i) {
+            for (int j = 0; j < SIZE; ++j) {
+                image[j][i] = (i + j == 255 ? image[j][i] : WHITE);
+            }
+        }
+        return;
+    }
+
     unsigned char newImage[newImageSize][SIZE];
 
-    int mod = SIZE / newImageSize;
+    // Calculate the ratio between the original image size and the skewed image size
+    double ratio = double(SIZE) / double(newImageSize);
 
-    for (int i = 0; i < SIZE; ++i) {
-        for (int j = 0; j < SIZE; ++j) {
-            if (j % mod == 0) continue;
-            else newImage[j - j / mod][i] = image[i][j];
+    // Copy pixels from the original image to the skewed image using the calculated ratio
+    int cnt = 0;
+    for (double i = 0; i < SIZE; i += ratio, cnt++) {
+        for (int j = 0; j < SIZE and cnt < newImageSize; j++) {
+            newImage[cnt][j] = image[int(i)][j];
         }
     }
 
+    // Adjust the skewed image by filling empty spaces with white pixels.
     for (int i = 0; i < SIZE; i++) {
         int empty = (SIZE - i) * tan(rad);
         int count = 0;
         for (int j = 0; j < SIZE; j++) {
             if (j < empty)
-                image[i][j] = 255;
+                image[j][i] = WHITE;
             else if (count < newImageSize)
-                image[i][j] = newImage[i][count++];
+                image[j][i] = newImage[count++][i];
             else
-                image[i][j] = 255;
+                image[j][i] = WHITE;
         }
     }
-
 }
 
 //--------------------------------------------
 char menu() {
     cout << "Please select a filter to apply or 0 to exit:\n";
-    cout << "1 - Black & White filter\n";
+    cout << "1 - BLACK & White filter\n";
     cout << "2 - Invert filter\n";
     cout << "3 - Merge filter\n";
     cout << "4 - Flip Image\n";
@@ -509,8 +571,7 @@ void systemRun() {
             skewHorizontally();
             break;
         case 'f':
-            //skewVertically();
-            cout << "This filter is still under development\n";
+            skewVertically();
             break;
         case 's':
             saveImage();
