@@ -5,4 +5,4 @@
   <li>The program has 16 image filter in which you can use multiple times.</li>
   <li>You can apply more filters after saving an image.</li>
 </ul>
-<span style="color:blueviolet;">enjoy</span>
+<span style="color:red;">enjoy</span>
