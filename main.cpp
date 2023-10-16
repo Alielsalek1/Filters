@@ -228,16 +228,12 @@ void shuffle() {
 
     // this is the image vector and the position vectors so we can reorder the image.
     const int half = SIZE / 2;
-    vector<vector<unsigned char>> img1(half, vector<unsigned char>(half));
-    vector<vector<unsigned char>> img2(half, vector<unsigned char>(half));
-    vector<vector<unsigned char>> img3(half, vector<unsigned char>(half));
-    vector<vector<unsigned char>> img4(half, vector<unsigned char>(half));
+    unsigned char img [4][SIZE][SIZE];
     vector<int>
             x1{0, 0, half, half}
     , x2{half, half, SIZE, SIZE}
     , y1{0, half, 0, half}
     , y2{half, SIZE, half, SIZE};
-
 
     for (int k = 0; k < 4; k++) {
         int h1, h2, v1, v2;
@@ -255,7 +251,6 @@ void shuffle() {
                 h1 = half, h2 = SIZE, v1 = half, v2 = SIZE;
                 break;
         }
-
         // this part is where each quadrant is stored in the image vector.
         vector<vector<unsigned char>> quadrant(half, vector<unsigned char>(SIZE / 2));
         int x = 0, y = 0;
@@ -265,46 +260,20 @@ void shuffle() {
                 quadrant[x][y] = image[i][j];
             }
         }
-        switch (k) {
-            case 0:
-                img1 = quadrant;
-                break;
-            case 1:
-                img2 = quadrant;
-                break;
-            case 2:
-                img3 = quadrant;
-                break;
-            case 3:
-                img4 = quadrant;
-                break;
+        for(int i=0;i<half;i++){
+            for(int j=0;j<half;j++){
+                img[k][i][j]=quadrant[i][j];
+            }
         }
     }
-
     // here we overwrite the image with the quadrants we saved.
     for (int i = 0; i < 4; i++) {
         int x = 0, y = 0;
-        vector<vector<unsigned char>> curr;
-        switch (i) {
-            case 0:
-                curr = img1;
-                break;
-            case 1:
-                curr = img2;
-                break;
-            case 2:
-                curr = img3;
-                break;
-            case 3:
-                curr = img4;
-                break;
-        }
         for (int j = x1[i]; j < x2[i]; ++j, ++x) {
             y = 0;
             for (int k = y1[i]; k < y2[i]; ++k, ++y) {
-                if (x < curr.size() && y < curr.size()) {
-
-                    image[j][k] = curr[x][y];
+                if (x < half && y < half) {
+                    image[j][k] = img[i][x][y];
                 }
             }
         }
