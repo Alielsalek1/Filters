@@ -12,7 +12,7 @@ enum Color {
     BLACK = 0,
     WHITE = 255
 };
-
+ 
 void loadImage();
 
 void saveImage();
